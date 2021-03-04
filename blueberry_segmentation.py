@@ -76,65 +76,65 @@ to_grayscale = A.Compose(
 
 
 class BlueberryDataset(Dataset):
-  def __init__(self, base_path, image_path, mask_path, transform=None):
-    self.images = []
-    self.masks = []
-    self.transform = transform
-    self.to_tensor = transforms.Compose([transforms.ToTensor()])
-    self.process_mask = transforms.Compose(
-        [
-          transforms.Grayscale(num_output_channels=1),
-          transforms.ToTensor(),
-        ]
-    )
+    def __init__(self, base_path, image_path, mask_path, transform=None):
+        self.images = []
+        self.masks = []
+        self.transform = transform
+        self.to_tensor = transforms.Compose([transforms.ToTensor()])
+        self.process_mask = transforms.Compose(
+            [
+            transforms.Grayscale(num_output_channels=1),
+            transforms.ToTensor(),
+            ]
+        )
+    
+        for image_file in os.listdir(image_path):
+            self.images.append(os.path.join(image_path, image_file))
+            mask_file = image_file[-12:-3] + 'png'
+            self.masks.append(os.path.join(mask_path, mask_file))
+    
+    def __len__(self):
+        return len(self.images)
 
-    for image_file in os.listdir(image_path):
-      self.images.append(os.path.join(image_path, image_file))
-      mask_file = image_file[-12:-3] + 'png'
-      self.masks.append(os.path.join(mask_path, mask_file))
-
-  def __len__(self):
-    return len(self.images)
-
-  def __getitem__(self, index): 
-    image = imread(self.images[index])
-    image = cvtColor(image, COLOR_BGR2RGB)
-
-    mask = imread(self.masks[index])
-    mask = cvtColor(mask, COLOR_BGR2RGB)
-
-    transformed = self.transform(image=image, mask=mask)
-
-    image = transformed['image']
-    mask = transformed['mask']
-
-    image = self.to_tensor(image) 
-    mask = Image.fromarray(mask)
-    mask = self.process_mask(mask)
-
-    return image, mask
-
+    def __getitem__(self, index): 
+        image = imread(self.images[index])
+        image = cvtColor(image, COLOR_BGR2RGB)
+        
+        mask = imread(self.masks[index])
+        mask = cvtColor(mask, COLOR_BGR2RGB)
+        
+        transformed = self.transform(image=image, mask=mask)
+        
+        image = transformed['image']
+        mask = transformed['mask']
+        
+        image = self.to_tensor(image) 
+        mask = Image.fromarray(mask)
+        mask = self.process_mask(mask)
+        
+        return image, mask
+    
 class BlueberryTestDataset(Dataset):
-  def __init__(self, base_path, image_path, transform=None):
-    self.images = []
-    self.transform = transform
-    self.to_tensor = transforms.Compose([transforms.ToTensor()])
-
-    for image_file in os.listdir(image_path):
-      self.images.append(os.path.join(image_path, image_file))
-
-  def __len__(self):
-      return len(self.images)
-
-  def __getitem__(self, index):
-    image = imread(self.images[index])
-    image = cvtColor(image, COLOR_BGR2RGB)
-    transformed = self.transform(image=image)
-
-    image = transformed['image']
-    image = self.to_tensor(image)
-
-    return image
+    def __init__(self, base_path, image_path, transform=None):
+        self.images = []
+        self.transform = transform
+        self.to_tensor = transforms.Compose([transforms.ToTensor()])
+    
+        for image_file in os.listdir(image_path):
+            self.images.append(os.path.join(image_path, image_file))
+        
+    def __len__(self):
+        return len(self.images)
+    
+    def __getitem__(self, index):
+        image = imread(self.images[index])
+        image = cvtColor(image, COLOR_BGR2RGB)
+        transformed = self.transform(image=image)
+    
+        image = transformed['image']
+        image = self.to_tensor(image)
+    
+        return image
 
 dataset = BlueberryDataset(BASE_DIR, IMAGES_DIR, MASKS_DIR, transform=train_transform) 
 train_set, val_set = torch.utils.data.random_split(dataset, [6, 1])
@@ -382,11 +382,6 @@ print(device)
 num_class = 1
 model = ResNetUNet(num_class).to(device)
 
-# freeze backbone layers
-#for l in model.base_layers:
-#    for param in l.parameters():
-#        param.requires_grad = False
-
 optimizer_ft = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-4)
 
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=30, gamma=0.1)
@@ -424,4 +419,3 @@ ax2 = fig.add_subplot(2, 5, 2)
 ax2.imshow(original_image)
 
 plt.show()
-
